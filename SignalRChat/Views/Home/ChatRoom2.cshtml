@@ -1,0 +1,82 @@
+﻿
+@{
+    ViewData["Title"] = "ChatRoom";
+}
+<div class="container">
+    <div style="margin-top:50px;" class="jumbotron">
+        <h1>Welcome to chat room 2</h1>
+        <p>Current users in chat room:</p>
+        <p id="chatroom2Members"></p>
+    </div>
+
+    <div class="row">
+        <div id="board" class="col-md-8">
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <input id="txtMessage" type="text" class="form-control">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" onclick="SendMessage()" type="button">Send</button>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .well {
+        min-height: 10px;
+        margin: 0;
+        padding: 2px;
+    }
+
+    #board {
+        height: 300px;
+        overflow: auto;
+    }
+</style>
+
+
+<script>
+
+    var name = prompt("Who are you?", "Your name..");
+
+    let connection = new signalR.HubConnection('/chatHub');
+    let chatroom = "chatRoom2";
+    connection.start()
+        .then(() => connection.invoke("RegisterMember", name, chatroom))
+        .then(() => connection.invoke("GetChatRoom2Members"));
+
+    connection.on('GetChatRoom2Members', data => {
+        const spanMembers1 = document.getElementById("chatroom2Members");
+        let members = "";
+        for (var i = 0; i < data.length; i++) {
+            members += data[i].name + " ";
+        }
+        spanMembers1.innerHTML = members;
+    });
+
+    connection.on('Send', data => {
+        const board = document.getElementById('board');
+        board.innerHTML += `<div class="well">${data}</div>`;
+        $("#board").animate({ scrollTop: 1000 }, 100);
+    });
+
+    function SendMessage() {
+        const group = "chatRoom2";
+        const input = document.getElementById("txtMessage");
+        if (input.value != "") {
+            connection.invoke('Send', input.value, group);
+            input.value = "";
+        }      
+    }
+
+    (function () {
+        document.querySelector("body").addEventListener("keyup", event => {            
+            if (event.key !== "Enter") return;
+            SendMessage();
+        });
+     })();
+   
+
+</script>
